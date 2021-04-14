@@ -1,0 +1,31 @@
+dataSourceKey: defaultDS
+destination: MERCHANTORDER_SYNC_ES
+groupId: MERCHANTORDER
+outerAdapterKey: exampleKey
+esMapping:
+  _index: order-test-3
+  _type: order_index
+  _id: _id
+  upsert: true
+#  pk: id
+  sql: "select 
+        shop_id as shopId , 
+        order_id as _id,
+        order_id as orderId,
+        shipping_method_type as shippingMethodType,
+        order_mode as orderMode,
+        order_type as orderType,
+        external_order_id as externalOrderId, 
+        receiver_name as receiverName,
+        receiver_mobile_tel as receiverMobileTel,
+        is_presale as isPresale,
+        send_date  as sendDate,
+        order_inner_type as orderInnerType,
+        pay_date as payDate,
+        order_creation_date as orderCreationDate,
+        payment_method_type as paymentMethodType
+        from orders"
+#  objFields:
+#    _labels: array:;
+  etlCondition: ""
+  commitBatch: 3000
