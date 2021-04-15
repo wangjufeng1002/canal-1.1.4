@@ -18,10 +18,15 @@ esMapping:
 #    FROM order_items"
   sql: "SELECT
 	order_id as _id,
-	concat('{\"productId\":\"',product_id,'\",','\"productName\":\"',product_name,'\"}') as products
+	order_id as orderId,
+	concat('{\"productId\":\"',product_id,'\",','\"productName\":\"',REPLACE(product_name, '\\\"', '\\\\\"'),'\"}') as products
     FROM order_items"
 
 #  objFields:
 #    _labels: array:;
   etlCondition: ""
   commitBatch: 3000
+#testsql: "SELECT REPLACE(product_name, '"', '\"')
+#	order_id as _id,
+#	concat('{\"productId\":\"',product_id,'\",','\"productName\":"',REPLACE(product_name, "\"", "\\\"") ,'"}') as products
+#    FROM order_items"

@@ -279,16 +279,37 @@ public class ESTemplate {
             return ESSyncUtil.convertToEsObj(value, mapping.getObjFields().get(fieldName));
         }
         else if("nested".equals(esType)){
+            if(value == null){
+                value = StringUtils.EMPTY;
+            }
             List<Map> arrayList = new ArrayList();
             if(value.toString().startsWith("[")){
-                arrayList.addAll(JSONArray.parseArray(value.toString()).toJavaList(Map.class));
-                while(resultSet.next()){
-                    arrayList.addAll(JSONArray.parseArray(resultSet.getObject(fieldName).toString()).toJavaList(Map.class));
+                try {
+                    arrayList.addAll(JSONArray.parseArray(value.toString()).toJavaList(Map.class));
+                    while(resultSet.next()){
+                        value = resultSet.getObject(fieldName);
+                        if(value == null){
+                            value = StringUtils.EMPTY;
+                        }
+                        arrayList.addAll(JSONArray.parseArray(value.toString()).toJavaList(Map.class));
+                    }
+                } catch (Exception e) {
+                    logger.error("ESTemplate.getValFromRS parse nested(array) exception,value={}",value,e);
+                    throw  e;
                 }
             }else {
-                arrayList.add(JSON.parseObject(value.toString(), Map.class));
-                while(resultSet.next()){
-                    arrayList.add(JSON.parseObject(resultSet.getObject(fieldName).toString(), Map.class));
+                try {
+                    arrayList.add(JSON.parseObject(value.toString(), Map.class));
+                    while(resultSet.next()){
+                        value= resultSet.getObject(fieldName);
+                        if(value == null){
+                            value = StringUtils.EMPTY;
+                        }
+                        arrayList.add(JSON.parseObject(value.toString(), Map.class));
+                    }
+                } catch (Exception e) {
+                    logger.error("ESTemplate.getValFromRS parse nested(map) exception,value={}",value,e);
+                    throw e;
                 }
             }
             return arrayList;
