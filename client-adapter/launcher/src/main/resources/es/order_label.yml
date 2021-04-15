@@ -1,0 +1,19 @@
+dataSourceKey: defaultDS
+destination: MERCHANTORDER_SYNC_ES
+groupId: MERCHANTORDER
+outerAdapterKey: exampleKey
+esMapping:
+  _index: order-test-3
+  _type: order_index
+  _id: _id
+  upsert: true
+#  pk: id
+  sql: "select 
+        ref_id as _id,
+        label  as orderLable,
+        label_comment as orderLableComment
+        from order_label"
+#  objFields:
+#    _labels: array:;
+  etlCondition: ""
+  commitBatch: 3000

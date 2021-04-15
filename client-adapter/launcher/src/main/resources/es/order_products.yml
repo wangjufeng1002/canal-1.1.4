@@ -7,13 +7,20 @@ esMapping:
   _type: order_index
   _id: _id
   upsert: true
-  nestedFields:
-    products:
-      pk: productId
-      fields: productId,productName
+#  nestedFields:
+#    products:
+#      pk: productId
+#      fields: productId,product_name
 #  pk: id
-  sql: "select order_id as _id,product_id as productId ,product_name as productName
-        from order_items"
+#  sql: "SELECT
+#	order_id as _id,
+#	concat('[',GROUP_CONCAT(concat('{\"productId\":\"',product_id,'\",','\"productName\":\"',product_name,'\"}')),']') as products
+#    FROM order_items"
+  sql: "SELECT
+	order_id as _id,
+	concat('{\"productId\":\"',product_id,'\",','\"productName\":\"',product_name,'\"}') as products
+    FROM order_items"
+
 #  objFields:
 #    _labels: array:;
   etlCondition: ""
