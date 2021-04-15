@@ -4,15 +4,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Blob;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.codec.binary.Base64;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -226,7 +223,19 @@ public class ESSyncUtil {
             } else {
                 res = JSON.parseObject(val.toString(), Map.class);
             }
-        } else {
+        } else if("nested".equals(esType)){
+            if ("".equals(val.toString().trim())) {
+                res =  new ArrayList<>();
+            }
+            else {
+                try {
+                    res = JSONArray.parseArray(val.toString());
+                } catch (Exception e) {
+                    res = JSON.parseObject(val.toString(), Map.class);
+                }
+            }
+        }
+        else {
             // 其他类全以字符串处理
             res = val.toString();
         }

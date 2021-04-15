@@ -1,13 +1,15 @@
 package com.alibaba.otter.canal.client.adapter.es.support;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import javax.sql.DataSource;
-
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.otter.canal.client.adapter.es.config.ESSyncConfig;
+import com.alibaba.otter.canal.client.adapter.es.config.ESSyncConfig.ESMapping;
+import com.alibaba.otter.canal.client.adapter.es.config.SchemaItem;
+import com.alibaba.otter.canal.client.adapter.es.config.SchemaItem.ColumnItem;
+import com.alibaba.otter.canal.client.adapter.es.config.SchemaItem.FieldItem;
+import com.alibaba.otter.canal.client.adapter.es.support.ESConnection.*;
+import com.alibaba.otter.canal.client.adapter.support.DatasourceConfig;
+import com.alibaba.otter.canal.client.adapter.support.Util;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -19,16 +21,14 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.alibaba.otter.canal.client.adapter.es.config.ESSyncConfig;
-import com.alibaba.otter.canal.client.adapter.es.config.ESSyncConfig.ESMapping;
-import com.alibaba.otter.canal.client.adapter.es.config.SchemaItem;
-import com.alibaba.otter.canal.client.adapter.es.config.SchemaItem.ColumnItem;
-import com.alibaba.otter.canal.client.adapter.es.config.SchemaItem.FieldItem;
-import com.alibaba.otter.canal.client.adapter.es.support.ESConnection.*;
-import com.alibaba.otter.canal.client.adapter.support.DatasourceConfig;
-import com.alibaba.otter.canal.client.adapter.support.Util;
 import org.springframework.util.CollectionUtils;
+
+import javax.sql.DataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * ES 操作模板
@@ -67,6 +67,8 @@ public class ESTemplate {
      * @param esFieldData 数据Map
      */
     public void insert(ESMapping mapping, Object pkVal, Map<String, Object> esFieldData) {
+        //TODO
+        dealNested(mapping,pkVal,esFieldData);
         if (mapping.get_id() != null) {
             String parentVal = (String) esFieldData.remove("$parent_routing");
             if (mapping.isUpsert()) {
@@ -224,6 +226,9 @@ public class ESTemplate {
     }
 
     private void append4Update(ESMapping mapping, Object pkVal, Map<String, Object> esFieldData) {
+        //处理 nested 文档内容
+        //TODO
+        dealNested(mapping,pkVal,esFieldData);
         if (mapping.get_id() != null) {
             String parentVal = (String) esFieldData.remove("$parent_routing");
             if (mapping.isUpsert()) {
@@ -272,7 +277,23 @@ public class ESTemplate {
         // 如果是对象类型
         if (mapping.getObjFields().containsKey(fieldName)) {
             return ESSyncUtil.convertToEsObj(value, mapping.getObjFields().get(fieldName));
-        } else {
+        }
+        else if("nested".equals(esType)){
+            List<Map> arrayList = new ArrayList();
+            if(value.toString().startsWith("[")){
+                arrayList.addAll(JSONArray.parseArray(value.toString()).toJavaList(Map.class));
+                while(resultSet.next()){
+                    arrayList.addAll(JSONArray.parseArray(resultSet.getObject(fieldName).toString()).toJavaList(Map.class));
+                }
+            }else {
+                arrayList.add(JSON.parseObject(value.toString(), Map.class));
+                while(resultSet.next()){
+                    arrayList.add(JSON.parseObject(resultSet.getObject(fieldName).toString(), Map.class));
+                }
+            }
+            return arrayList;
+        }
+        else {
             return ESSyncUtil.typeConvert(value, esType);
         }
     }
@@ -393,7 +414,8 @@ public class ESTemplate {
                 nestedPkValue.put(fieldItem.getFieldName(),getValFromData(mapping, dmlData, fieldItem.getFieldName(), columnName));
             }
         }
-
+        // 转换 nested 字段
+        this.coverNestedData(mapping, esFieldData, nestedPkValue);
         // 添加父子文档关联信息
         putRelationData(mapping, schemaItem, dmlData, esFieldData);
         return resultIdVal;
@@ -410,6 +432,9 @@ public class ESTemplate {
     public Object getESDataFromDmlData(ESMapping mapping, Map<String, Object> dmlData, Map<String, Object> dmlOld,
                                        Map<String, Object> esFieldData) {
         SchemaItem schemaItem = mapping.getSchemaItem();
+        //取出 Nested 类型的主键
+        Map<String,Object> nestedPkValue = new HashMap<>();
+        Set<String> nestedPks = mapping.getNestedPks();
         String idFieldName = mapping.get_id() == null ? mapping.getPk() : mapping.get_id();
         Object resultIdVal = null;
         for (FieldItem fieldItem : schemaItem.getSelectFields().values()) {
@@ -423,8 +448,13 @@ public class ESTemplate {
                 esFieldData.put(Util.cleanColumn(fieldItem.getFieldName()),
                         getValFromData(mapping, dmlData, fieldItem.getFieldName(), columnName));
             }
+            //取出 Nested 类型的主键对应的值
+            if (!CollectionUtils.isEmpty(nestedPks) && nestedPks.contains(fieldItem.getFieldName())) {
+                nestedPkValue.put(fieldItem.getFieldName(),getValFromData(mapping, dmlData, fieldItem.getFieldName(), columnName));
+            }
         }
-
+        // 转换 nested 字段
+        this.coverNestedData(mapping, esFieldData, nestedPkValue);
         // 添加父子文档关联信息
         putRelationData(mapping, schemaItem, dmlOld, esFieldData);
         return resultIdVal;
@@ -513,7 +543,11 @@ public class ESTemplate {
             for (Map.Entry<String, Object> entry : esMapping.entrySet()) {
                 Map<String, Object> value = (Map<String, Object>) entry.getValue();
                 if (value.containsKey("properties")) {
-                    fieldType.put(entry.getKey(), "object");
+                    if("nested".equals(value.get("type"))){
+                        fieldType.put(entry.getKey(), "nested");
+                    }else {
+                        fieldType.put(entry.getKey(), "object");
+                    }
                 } else {
                     fieldType.put(entry.getKey(), (String) value.get("type"));
                 }
@@ -542,4 +576,62 @@ public class ESTemplate {
         }
     }
 
+    /**
+     * 处理 nested 更新
+     * @param mapping  映射
+     * @param pkVal    文档主键 _id 值
+     * @param esFieldData 需要更新的字段
+     */
+    private void dealNested(ESMapping mapping,Object pkVal,Map<String, Object> esFieldData){
+        // 需要更新的字段 和 配置的 nested 配置的字段求交集，如果存在，则需要更新nested 类型节点数据
+        Set<String> keys = esFieldData.keySet();
+        Set<String> nestedKeys = mapping.getNestedFields().keySet();
+        nestedKeys.retainAll(keys);
+        if(CollectionUtils.isEmpty(nestedKeys)){
+            //不存在直接返回
+            return;
+        }else {
+            for(String nestedkey : nestedKeys){
+                ESSyncConfig.NestedMaping nestedMaping = mapping.getNestedFields().get(nestedkey);
+                String pk = nestedMaping.getPk();
+                ArrayList updateDataList = (ArrayList)esFieldData.get(nestedkey);
+                if(CollectionUtils.isEmpty(updateDataList)){
+                    return;
+                }
+                Map updateData = (Map)updateDataList.get(0);
+                Object pkValue = updateData.get(pk);
+                //TODO 查询原始文档
+                ESSearchRequest esSearchRequest = this.esConnection.new ESSearchRequest(mapping.get_index(),
+                        mapping.get_type()).setQuery(QueryBuilders.termQuery(mapping.get_id(), pkVal)).size(10000);
+                SearchResponse response = esSearchRequest.getResponse();
+                SearchHit[] hits = response.getHits().getHits();
+                if(hits == null || hits.length <= 0){
+                    return;
+                }
+                Map<String, Object> sourceAsMap = hits[0].getSourceAsMap();
+                ArrayList nowData = (ArrayList)sourceAsMap.get(nestedkey);
+                //当前文档不存在 nested 数据
+                if(CollectionUtils.isEmpty(nowData)){
+                    return;
+                }
+                Iterator iterator = nowData.iterator();
+                boolean updateFlag = false;
+                while(iterator.hasNext()){
+                    Map map = (Map) iterator.next();
+                    if(map.get(pk).toString().equals(pkValue.toString())){
+                        updateFlag= true;
+                        // 找到相同的文档后，对内容进行替换 ，遍历变化的 key, 对原始文档相同的key内容进行替换。
+                        for(Object key:updateData.keySet()){
+                            map.put(key,updateData.get(key));
+                        }
+                    }
+                }
+                if(!updateFlag){
+                    nowData.add(updateData);
+                }
+                //替换 nested 节点数据
+                esFieldData.put(nestedkey,nowData);
+            }
+        }
+    }
 }
