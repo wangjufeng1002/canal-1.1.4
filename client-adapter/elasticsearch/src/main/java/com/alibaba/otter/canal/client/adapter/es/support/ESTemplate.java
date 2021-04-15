@@ -285,11 +285,13 @@ public class ESTemplate {
             List<Map> arrayList = new ArrayList();
             if(value.toString().startsWith("[")){
                 try {
-                    arrayList.addAll(JSONArray.parseArray(value.toString()).toJavaList(Map.class));
+                    if(StringUtils.isNotBlank(value.toString())){
+                        arrayList.addAll(JSONArray.parseArray(value.toString()).toJavaList(Map.class));
+                    }
                     while(resultSet.next()){
                         value = resultSet.getObject(fieldName);
-                        if(value == null){
-                            value = StringUtils.EMPTY;
+                        if(value == null || StringUtils.isBlank(value.toString())){
+                           continue;
                         }
                         arrayList.addAll(JSONArray.parseArray(value.toString()).toJavaList(Map.class));
                     }
@@ -299,11 +301,13 @@ public class ESTemplate {
                 }
             }else {
                 try {
-                    arrayList.add(JSON.parseObject(value.toString(), Map.class));
+                    if(StringUtils.isNotBlank(value.toString())){
+                        arrayList.add(JSON.parseObject(value.toString(), Map.class));
+                    }
                     while(resultSet.next()){
                         value= resultSet.getObject(fieldName);
-                        if(value == null){
-                            value = StringUtils.EMPTY;
+                        if(value == null || StringUtils.isBlank(value.toString())){
+                            continue;
                         }
                         arrayList.add(JSON.parseObject(value.toString(), Map.class));
                     }
@@ -465,7 +469,7 @@ public class ESTemplate {
                 resultIdVal = getValFromData(mapping, dmlData, fieldItem.getFieldName(), columnName);
             }
 
-            if (dmlOld.containsKey(columnName) && !mapping.getSkips().contains(fieldItem.getFieldName())) {
+            if (!fieldItem.getFieldName().equals(mapping.get_id()) && dmlOld.containsKey(columnName) && !mapping.getSkips().contains(fieldItem.getFieldName())) {
                 esFieldData.put(Util.cleanColumn(fieldItem.getFieldName()),
                         getValFromData(mapping, dmlData, fieldItem.getFieldName(), columnName));
             }

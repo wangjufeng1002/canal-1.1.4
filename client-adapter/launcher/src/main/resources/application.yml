@@ -7,8 +7,9 @@ spring:
     default-property-inclusion: non_null
 
 canal.conf:
-  mode: rocketMQ # kafka rocketMQ
-#  canalServerHost: 127.0.0.1:11111
+  mode: rocketMQ #rocketMQ # kafka rocketMQ
+  #mode: tcp
+  #canalServerHost: 127.0.0.1:11111
   zookeeperHosts: 10.255.242.18:2181
   mqServers: 10.255.242.76:9876;10.255.242.77:9876;10.255.242.78:9876 #or rocketmq
   flatMessage: true
@@ -21,9 +22,18 @@ canal.conf:
   username:
   password:
   vhost:
+#  srcDataSources:
+#    defaultDS:
+#      url: jdbc:mysql://10.255.254.225:3307/orders_basic?useUnicode=true
+#      username: writeuser
+#      password: ddbackend
   srcDataSources:
     defaultDS:
       url: jdbc:mysql://10.255.254.225:3307/orders_basic?useUnicode=true
+      username: writeuser
+      password: ddbackend
+    mtOrderPackage:
+      url: jdbc:mysql://10.255.254.225:3307/mt_order_package?useUnicode=true
       username: writeuser
       password: ddbackend
   canalAdapters:
@@ -32,7 +42,8 @@ canal.conf:
     - groupId: MERCHANTORDER
       outerAdapters:
       - name: es
-        hosts: 192.168.47.199:9200
+        #hosts: 192.168.47.199:9200
+        hosts: 10.4.19.41:9200
         key: exampleKey
         properties:
           mode: rest

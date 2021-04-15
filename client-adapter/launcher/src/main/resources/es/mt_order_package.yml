@@ -1,0 +1,19 @@
+dataSourceKey: mtOrderPackage
+destination: MERCHANTORDER_SYNC_ES
+groupId: MERCHANTORDER
+outerAdapterKey: exampleKey
+esMapping:
+  _index: order-test-3
+  _type: order_index
+  _id: _id
+  upsert: true
+  sql: "SELECT
+	order_id as _id,
+	order_id as orderId,
+	concat('{\"expressNo\":\"',express_no,'\",','\"expressCompany\":\"',REPLACE(express_company, '\\\"', '\\\\\"'),'\"}') as expresses
+    FROM order_package"
+
+#  objFields:
+#    _labels: array:;
+  etlCondition: ""
+  commitBatch: 3000
