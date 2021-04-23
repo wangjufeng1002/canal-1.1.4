@@ -123,4 +123,8 @@ public abstract class AbstractEtlService {
                                                 AdapterConfig.AdapterMapping mapping, AtomicLong impCount,
                                                 List<String> errMsg);
 
+   /* protected abstract boolean executeSqlImport_V2(DataSource ds, String sql, List<Object> values,
+                                                AdapterConfig.AdapterMapping mapping, AtomicLong impCount,
+                                                List<String> errMsg);*/
+
 }

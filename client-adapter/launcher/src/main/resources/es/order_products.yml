@@ -1,6 +1,6 @@
 dataSourceKey: defaultDS
 destination: MERCHANTORDER_SYNC_ES
-groupId: MERCHANTORDER
+groupId: MERCHANTORDER_01
 outerAdapterKey: exampleKey
 esMapping:
   _index: order-test-3
@@ -20,7 +20,7 @@ esMapping:
 	order_id as _id,
 	order_id as orderId,
 	concat('{\"productId\":\"',product_id,'\",','\"productName\":\"',REPLACE(product_name, '\\\"', '\\\\\"'),'\"}') as products
-    FROM order_items"
+    FROM order_items "
 
 #  objFields:
 #    _labels: array:;

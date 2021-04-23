@@ -1,6 +1,6 @@
 dataSourceKey: defaultDS
 destination: MERCHANTORDER_SYNC_ES
-groupId: MERCHANTORDER
+groupId: MERCHANTORDER_01
 outerAdapterKey: exampleKey
 esMapping:
   _index: order-test-3
@@ -9,23 +9,29 @@ esMapping:
   upsert: true
 #  pk: id
   sql: "select 
-        shop_id as shopId , 
-        order_id as _id,
-        order_id as orderId,
-        shipping_method_type as shippingMethodType,
-        order_mode as orderMode,
-        order_type as orderType,
-        external_order_id as externalOrderId, 
-        receiver_name as receiverName,
-        receiver_mobile_tel as receiverMobileTel,
-        is_presale as isPresale,
-        send_date  as sendDate,
-        order_inner_type as orderInnerType,
-        pay_date as payDate,
-        order_creation_date as orderCreationDate,
-        payment_method_type as paymentMethodType
-        from orders"
+        a.shop_id as shopId ,
+        a.order_id as _id,
+        a.order_id as orderId,
+        a.shipping_method_type as shippingMethodType,
+        a.order_mode as orderMode,
+        a.order_type as orderType,
+        a.external_order_id as externalOrderId,
+        a.receiver_name as receiverName,
+        a.receiver_mobile_tel as receiverMobileTel,
+        a.is_presale as isPresale,
+        a.send_date  as sendDate,
+        a.order_inner_type as orderInnerType,
+        a.pay_date as payDate,
+        a.order_creation_date as orderCreationDate,
+        a.payment_method_type as paymentMethodType,
+        b.nick_name as custNickName,
+        b.cust_id as custId,
+        a.SHIPPING_LAST_EVENT_DATE as shippingLastEventDate,
+        a.WAIT_DISTRIBUTION_DATE as waitDistributionDate,
+        a.WAIT_SHIPPING_RESULT_DATE as waitShippingResultDate,
+        a.ORDER_CANCEL_DATE as orderCancelDate
+        from orders as a left join order_cust_detail b on a.cust_id = b.cust_id "
 #  objFields:
 #    _labels: array:;
-  etlCondition: ""
+  etlCondition: " where a.order_creation_date >= {}"
   commitBatch: 3000

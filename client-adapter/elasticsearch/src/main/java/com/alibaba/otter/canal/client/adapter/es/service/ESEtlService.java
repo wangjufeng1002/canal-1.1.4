@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.sql.DataSource;
 
+import com.alibaba.otter.canal.client.adapter.es.support.ESSyncUtil;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -72,7 +73,7 @@ public class ESEtlService extends AbstractEtlService {
         }
     }
 
-    protected boolean executeSqlImport(DataSource ds, String sql, List<Object> values,
+    protected boolean executeSqlImport_V2(DataSource ds, String sql, List<Object> values,
                                        AdapterConfig.AdapterMapping adapterMapping, AtomicLong impCount,
                                        List<String> errMsg) {
         try {
@@ -213,5 +214,57 @@ public class ESEtlService extends AbstractEtlService {
             logger.error(e.getMessage(), e);
             return false;
         }
+    }
+
+
+    //@Override
+    protected boolean executeSqlImport(DataSource ds, String sql, List<Object> values, AdapterConfig.AdapterMapping adapterMapping, AtomicLong impCount, List<String> errMsg) {
+        ESMapping mapping = (ESMapping) adapterMapping;
+        Util.sqlRS(ds, sql, values, rs->{
+            int count = 0;
+            try {
+                while (rs.next()) {
+                    Object idVal = null;
+                    String columnName = null;
+                    for (FieldItem fieldItem : mapping.getSchemaItem().getSelectFields().values()) {
+                        String fieldName = fieldItem.getFieldName();
+                        if (mapping.getSkips().contains(fieldName)) {
+                            continue;
+                        }
+                        if (fieldItem.getFieldName().equals(mapping.get_id())) {
+                            idVal = esTemplate.getValFromRS(mapping, rs, fieldName, fieldName);
+                            columnName = fieldItem.getColumn().getColumnName();
+                        }
+                    }
+                    Map<String, Object> data = new HashMap<>();
+                    data.put(columnName,idVal);
+                    String sql2 = mapping.getSql();
+                    String condition = ESSyncUtil.pkConditionSql(mapping, data);
+                    sql2 = ESSyncUtil.appendCondition(sql2, condition);
+                    Util.sqlRS(ds, sql2, resultSet -> {
+                        try {
+                            while (resultSet.next()) {
+                                Map<String, Object> esFieldData = new LinkedHashMap<>();
+                                Object idValue = esTemplate.getESDataFromRS(mapping, resultSet, esFieldData);
+                                logger.info("idValue:{}",idValue);
+                                esTemplate.update(mapping, idValue, esFieldData);
+                            }
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                        return 1;
+                    });
+                    esTemplate.commit();
+                    count++;
+                    impCount.incrementAndGet();
+                }
+            }catch (Exception e){
+                logger.error(e.getMessage(), e);
+                errMsg.add(mapping.get_index() + " etl failed! ==>" + e.getMessage());
+                throw new RuntimeException(e);
+            }
+            return count;
+        });
+        return false;
     }
 }

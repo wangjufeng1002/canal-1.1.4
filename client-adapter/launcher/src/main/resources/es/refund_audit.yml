@@ -1,4 +1,4 @@
-dataSourceKey: mtOrderPackage
+dataSourceKey: defaultDS
 destination: MERCHANTORDER_SYNC_ES
 groupId: MERCHANTORDER_01
 outerAdapterKey: exampleKey
@@ -10,10 +10,10 @@ esMapping:
   sql: "SELECT
 	order_id as _id,
 	order_id as orderId,
-	concat('{\"expressNo\":\"',express_no,'\",','\"expressCompany\":\"',REPLACE(express_company, '\\\"', '\\\\\"'),'\"}') as expresses
-    FROM order_package"
+	concat('{\"sourceId\":\"',source_id,'\",','\"isAgree\":\"',is_agree,'\",','\"refundSource\":\"',refund_source,'\"}') as refundAudits
+    FROM refund_audit "
 
 #  objFields:
 #    _labels: array:;
-  etlCondition: ""
+  etlCondition: " where creation_date >= {}"
   commitBatch: 3000

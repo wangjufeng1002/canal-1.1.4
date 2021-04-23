@@ -10,7 +10,7 @@ canal.conf:
   mode: rocketMQ #rocketMQ # kafka rocketMQ
   #mode: tcp
   #canalServerHost: 127.0.0.1:11111
-  zookeeperHosts: 10.255.242.18:2181
+  #zookeeperHosts: 10.255.242.18:2181
   mqServers: 10.255.242.76:9876;10.255.242.77:9876;10.255.242.78:9876 #or rocketmq
   flatMessage: true
   batchSize: 500
@@ -39,7 +39,7 @@ canal.conf:
   canalAdapters:
   - instance: MERCHANTORDER_SYNC_ES # canal instance Name or mq topic name
     groups:
-    - groupId: MERCHANTORDER
+    - groupId: MERCHANTORDER_01
       outerAdapters:
       - name: es
         #hosts: 192.168.47.199:9200
