@@ -12,6 +12,7 @@ esMapping:
         a.shop_id as shopId ,
         a.order_id as _id,
         a.order_id as orderId,
+        a.status as status,
         a.shipping_method_type as shippingMethodType,
         a.order_mode as orderMode,
         a.order_type as orderType,
