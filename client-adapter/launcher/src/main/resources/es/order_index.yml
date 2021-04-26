@@ -34,5 +34,5 @@ esMapping:
         from orders as a left join order_cust_detail b on a.cust_id = b.cust_id "
 #  objFields:
 #    _labels: array:;
-  etlCondition: " where a.order_creation_date >= {}"
+  etlCondition: " where a.order_creation_date >= {} and a.order_creation_date <= {}"
   commitBatch: 3000
