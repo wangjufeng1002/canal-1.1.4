@@ -322,7 +322,6 @@ public class ESTemplate {
             return ESSyncUtil.typeConvert(value, esType);
         }
     }
-
     public Object getESDataFromRS(ESMapping mapping, ResultSet resultSet,
                                   Map<String, Object> esFieldData) throws SQLException {
         SchemaItem schemaItem = mapping.getSchemaItem();

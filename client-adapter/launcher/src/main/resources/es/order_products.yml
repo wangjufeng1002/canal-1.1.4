@@ -16,10 +16,16 @@ esMapping:
 #	order_id as _id,
 #	concat('[',GROUP_CONCAT(concat('{\"productId\":\"',product_id,'\",','\"productName\":\"',product_name,'\"}')),']') as products
 #    FROM order_items"
-  sql: "SELECT
+#  sql: "SELECT
+#	order_id as _id,
+#	order_id as orderId,
+#	concat('{\"productId\":\"',product_id,'\",','\"productName\":\"',REPLACE(product_name, '\\\"', '\\\\\"'),'\"}') as products
+#    FROM order_items "
+  sql: "
+	SELECT
 	order_id as _id,
 	order_id as orderId,
-	concat('{\"productId\":\"',product_id,'\",','\"productName\":\"',REPLACE(product_name, '\\\"', '\\\\\"'),'\"}') as products
+	concat('{\"productId\":\"',product_id,'\",','\"productName\":\"',REPLACE(product_name, '\"', ' '),'\"}') as products
     FROM order_items "
 
 #  objFields:

@@ -30,9 +30,11 @@ esMapping:
         a.SHIPPING_LAST_EVENT_DATE as shippingLastEventDate,
         a.WAIT_DISTRIBUTION_DATE as waitDistributionDate,
         a.WAIT_SHIPPING_RESULT_DATE as waitShippingResultDate,
-        a.ORDER_CANCEL_DATE as orderCancelDate
+        a.ORDER_CANCEL_DATE as orderCancelDate,
+        a.from_platform as formPlatForm,
+        concat('{\"custId\":\"',b.cust_id,'\",','\"custNickName\":\"',REPLACE(b.nick_name, '\"', ' '),'\"}') as custInfo
         from orders as a left join order_cust_detail b on a.cust_id = b.cust_id "
-#  objFields:
-#    _labels: array:;
+  objFields:
+    custInfo: object;
   etlCondition: " where a.order_creation_date >= {} and a.order_creation_date <= {}"
   commitBatch: 3000

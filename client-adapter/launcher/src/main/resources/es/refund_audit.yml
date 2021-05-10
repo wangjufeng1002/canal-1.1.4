@@ -15,5 +15,5 @@ esMapping:
 
 #  objFields:
 #    _labels: array:;
-  etlCondition: " where creation_date >= {}"
+  etnlCodition: " where creation_date >= {}"
   commitBatch: 3000

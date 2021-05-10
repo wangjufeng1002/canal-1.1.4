@@ -73,7 +73,7 @@ public class ESEtlService extends AbstractEtlService {
         }
     }
 
-    protected boolean executeSqlImport(DataSource ds, String sql, List<Object> values,
+   /* protected boolean executeSqlImport(DataSource ds, String sql, List<Object> values,
                                        AdapterConfig.AdapterMapping adapterMapping, AtomicLong impCount,
                                        List<String> errMsg) {
         try {
@@ -214,11 +214,11 @@ public class ESEtlService extends AbstractEtlService {
             logger.error(e.getMessage(), e);
             return false;
         }
-    }
+    }*/
 
 
     //@Override
-   /* protected boolean executeSqlImport(DataSource ds, String sql, List<Object> values, AdapterConfig.AdapterMapping adapterMapping, AtomicLong impCount, List<String> errMsg) {
+    protected boolean executeSqlImport(DataSource ds, String sql, List<Object> values, AdapterConfig.AdapterMapping adapterMapping, AtomicLong impCount, List<String> errMsg) {
         ESMapping mapping = (ESMapping) adapterMapping;
         Util.sqlRS(ds, sql, values, rs->{
             int count = 0;
@@ -266,5 +266,5 @@ public class ESEtlService extends AbstractEtlService {
             return count;
         });
         return false;
-    }*/
+    }
 }
