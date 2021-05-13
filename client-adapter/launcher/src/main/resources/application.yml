@@ -48,6 +48,7 @@ canal.conf:
         properties:
           mode: rest
           cluster.name: order-es
+          security.auth:
 #      - name: rdb
 #        key: mysql1
 #        properties:
