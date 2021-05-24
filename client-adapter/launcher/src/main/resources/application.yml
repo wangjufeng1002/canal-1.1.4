@@ -10,7 +10,7 @@ canal.conf:
   mode: rocketMQ #rocketMQ # kafka rocketMQ
   #mode: tcp
   #canalServerHost: 127.0.0.1:11111
-  zookeeperHosts: 10.255.242.18:2181
+  #zookeeperHosts: 10.255.242.18:2181
   mqServers: 10.255.242.76:9876;10.255.242.77:9876;10.255.242.78:9876 #or rocketmq
   flatMessage: true
   batchSize: 500
@@ -48,6 +48,7 @@ canal.conf:
         properties:
           mode: rest
           cluster.name: order-es
+          #security.auth: elastic:order20210508
 #      - name: rdb
 #        key: mysql1
 #        properties:

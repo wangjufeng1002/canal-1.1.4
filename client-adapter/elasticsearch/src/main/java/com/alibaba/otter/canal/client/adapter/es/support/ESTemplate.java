@@ -286,14 +286,14 @@ public class ESTemplate {
             if(value.toString().startsWith("[")){
                 try {
                     if(StringUtils.isNotBlank(value.toString())){
-                        arrayList.addAll(JSONArray.parseArray(value.toString()).toJavaList(Map.class));
+                        arrayList.addAll(JSONArray.parseArray(replaceSpecial(value.toString())).toJavaList(Map.class));
                     }
                     while(resultSet.next()){
                         value = resultSet.getObject(fieldName);
                         if(value == null || StringUtils.isBlank(value.toString())){
                            continue;
                         }
-                        arrayList.addAll(JSONArray.parseArray(value.toString()).toJavaList(Map.class));
+                        arrayList.addAll(JSONArray.parseArray(replaceSpecial(value.toString())).toJavaList(Map.class));
                     }
                 } catch (Exception e) {
                     logger.error("ESTemplate.getValFromRS parse nested(array) exception,value={}",value,e);
@@ -302,14 +302,14 @@ public class ESTemplate {
             }else {
                 try {
                     if(StringUtils.isNotBlank(value.toString())){
-                        arrayList.add(JSON.parseObject(value.toString(), Map.class));
+                        arrayList.add(JSON.parseObject(replaceSpecial(value.toString()), Map.class));
                     }
                     while(resultSet.next()){
                         value= resultSet.getObject(fieldName);
                         if(value == null || StringUtils.isBlank(value.toString())){
                             continue;
                         }
-                        arrayList.add(JSON.parseObject(value.toString(), Map.class));
+                        arrayList.add(JSON.parseObject(replaceSpecial(value.toString()), Map.class));
                     }
                 } catch (Exception e) {
                     logger.error("ESTemplate.getValFromRS parse nested(map) exception,value={}",value,e);
@@ -321,6 +321,10 @@ public class ESTemplate {
         else {
             return ESSyncUtil.typeConvert(value, esType);
         }
+    }
+
+    private String replaceSpecial(String value){
+       return   value.replaceAll("\\\\","\\\\\\\\");
     }
 
     public Object getESDataFromRS(ESMapping mapping, ResultSet resultSet,

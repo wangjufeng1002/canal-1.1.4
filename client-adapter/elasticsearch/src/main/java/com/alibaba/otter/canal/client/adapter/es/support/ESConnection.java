@@ -357,7 +357,7 @@ public class ESConnection {
 
     public class ESBulkRequest {
 
-        private BulkRequestBuilder bulkRequestBuilder;
+        private BulkRequestBuilder bulkRequestBuilder;F
 
         private BulkRequest        bulkRequest;
 
